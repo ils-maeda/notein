@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#4361ee">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="NoteIn">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" type="image/svg+xml" href="Images/NoteInIcon.svg">
+    <link rel="alternate icon" type="image/png" href="Images/NoteInIcon.png">
+    <link rel="apple-touch-icon" href="Images/apple-touch-icon.png">
+    <title>NoteIn — シンプルなメモ帳</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <header class="sidebar-header">
+                <h1>NoteIn</h1>
+                <div class="header-actions">
+                    <!-- 既存ファイルを追加 -->
+                    <button id="add-file-btn" class="icon-btn" title="ファイルを追加">
+                        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+                    </button>
+                    <!-- 新規ファイル作成 -->
+                    <button id="new-note-btn" class="icon-btn primary-btn" title="新規ファイルを作成">
+                        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    </button>
+                </div>
+            </header>
+
+            <div class="search-container">
+                <input type="text" id="search-input" placeholder="ファイル名で検索...">
+            </div>
+
+            <nav class="note-list-container">
+                <ul id="note-list"></ul>
+            </nav>
+        </aside>
+
+        <main class="editor-container">
+            <div id="editor-empty-state" class="empty-state">
+                <div class="empty-icon">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                </div>
+                <p id="empty-message">左上のボタンでファイルを追加してください</p>
+                <p id="empty-sub" class="empty-sub">既存の .md / .txt ファイルを読み込めます</p>
+            </div>
+
+            <div id="editor-active-state" class="active-state hidden">
+                <header class="editor-header">
+                    <button id="back-to-list-btn" class="icon-btn back-to-list-btn" title="一覧に戻る">
+                        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                    </button>
+                    <input type="text" id="note-title-input" class="note-title-input" title="Enterキーでファイル名を変更して別名保存">
+                    <div id="subject-indicator" class="subject-indicator hidden">
+                        <span class="subject-label" title="サブジェクト達成率">🎯</span>
+                        <span class="progress-text" id="subject-progress">0% (0/0)</span>
+                    </div>
+                    <div class="editor-actions">
+                        <button id="save-btn" class="save-btn" title="保存 (Ctrl+S)">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                            保存
+                        </button>
+                        <button id="export-btn" class="text-btn export-btn" title="メモを .md ファイルとして書き出す">書き出し</button>
+                        <button id="toggle-preview-btn" class="text-btn">
+                            <span class="edit-label">プレビュー</span>
+                            <span class="preview-label hidden">編集</span>
+                        </button>
+                    </div>
+                </header>
+
+                <section class="textarea-wrapper" id="editor-wrapper">
+                    <!-- ブロックエディタのコンテナを追加し、既存のテキストエリアを裏方として非表示にする -->
+                    <div id="block-editor-container" class="block-editor-container"></div>
+                    <button id="global-add-block-btn" class="global-add-block-btn" title="新しいセクションを追加">+ 新しいセクションを追加</button>
+                    <textarea id="note-content-input" placeholder="ここに入力..." class="hidden"></textarea>
+                    <div id="markdown-preview" class="markdown-body hidden"></div>
+                </section>
+
+                <footer class="editor-footer">
+                    <div class="status-info">
+                        <span id="char-count">0 文字</span>
+                        <span class="separator">|</span>
+                        <span id="last-saved-time">保存済み</span>
+                        <span class="separator">|</span>
+                        <span class="shortcut-hint" style="color: var(--text-muted); font-size: 0.75rem;">💡 [Ctrl + ↑↓] 選択したブロックを移動</span>
+                    </div>
+                    <span id="file-path-info" class="file-path-info"></span>
+                </footer>
+            </div>
+        </main>
+    </div>
+
+    <!-- ===== セクション設定ダイアログ ===== -->
+    <dialog id="block-settings-dialog" class="settings-dialog">
+        <div class="dialog-header">
+            <h3>セクション設定</h3>
+            <button id="dialog-close-btn" class="dialog-close-btn">&times;</button>
+        </div>
+        <div class="dialog-body">
+            <div class="form-group">
+                <label for="dialog-heading-input">見出し</label>
+                <input type="text" id="dialog-heading-input" class="dialog-input" placeholder="セクションの見出し">
+            </div>
+        </div>
+        <div class="dialog-footer flex-between">
+            <button id="dialog-delete-btn" class="btn btn-danger">削除</button>
+            <div class="dialog-footer-right">
+                <button id="dialog-cancel-btn" class="btn btn-secondary">キャンセル</button>
+                <button id="dialog-save-btn" class="btn btn-primary">保存</button>
+            </div>
+        </div>
+    </dialog>
+
+    <!-- ===== 画像プレビューモーダル ===== -->
+    <dialog id="image-preview-dialog" class="image-preview-dialog">
+        <div class="image-preview-wrapper">
+            <button id="image-dialog-close-btn" class="image-dialog-close-btn" title="閉じる">&times;</button>
+            <img id="image-dialog-img" src="" alt="プレビュー画像">
+            <div id="image-dialog-caption" class="image-dialog-caption"></div>
+        </div>
+    </dialog>
+
+    <script src="app.js"></script>
+</body>
+</html>
